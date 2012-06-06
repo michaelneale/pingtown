@@ -11,13 +11,14 @@
   "Open an async url connection - check if done"
   [url]  
   (with-open [client (http/create-client)] ; Create client
-    (let [resp (http/GET client url)]    
-        (print "done: ")
-        (println (.toString (http/done? resp)))
-        (print "failed: ")
-        (println (.toString (http/failed? resp)))
-      )
-  ))
+    (let [resp (http/GET client url)
+          status (http/status resp)
+          headers (http/headers resp)]
+      (println (:code status))
+      (http/await resp)
+      (http/string resp))))
+
+;; should really use agents with http/await in function passed
 
 
 (defn with-callback 
@@ -40,10 +41,19 @@
 
   )
 
+(defn get-urls [urls]
+  (let [agents (doall (map #(agent %) urls))]
+    (doseq [agent agents] (send-off agent open-url))
+    (apply await-for 5000 agents)
+    (doall (map #(deref %) agents))))
+
 
 (defn root-page []
+    (prn (get-urls '("http://lethain.com" "http://willarson.com")))
+
+
     (with-callback)
-    (open-url "http://github.com/neotyk/http.async.client/")
+    (println (open-url "http://github.com/neotyk/http.async.client/"))
   "OK")
 
 
