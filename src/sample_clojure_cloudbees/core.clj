@@ -8,7 +8,7 @@
     [http.async.client.request :as request]))
 
 (defn open-url 
-  "Open an async url connection"
+  "Open an async url connection - check if done"
   [url]  
   (with-open [client (http/create-client)] ; Create client
     (let [resp (http/GET client url)]    
@@ -20,8 +20,8 @@
   ))
 
 
-(defn open-callback 
-  "lets try this with a call back"
+(defn with-callback 
+  "lets try this with a call back - a lot of WTF"
   []
   (with-open [client (http/create-client)] ; create client
   (let [request (request/prepare-request :get "http://www.smh.com.au/") ; create request
@@ -30,17 +30,19 @@
                   client request        ; execute *request*
                   :status               ; status callback
                   (fn [res st]          ; *res* is response map, same as one returned by *execute-request*
-                                        ; *st* is status map, as described above
+                    (println "called back !")                    ; *st* is status map, as described above
                     (deliver status st) ; deliver status promise
-                    [st :abort]))]      ; return status to be delivered to response map and abort further processing of response.
-    (println @status)))                 ; await status to be delivered and print it.
+                    [st :abort]))]      ; return status to be delivered to response map and abort further processing of response.                  
+        (println @status); await status to be delivered and print it.
+        ))
+
+     (println "callback was dispatched")
 
   )
 
 
 (defn root-page []
-
-    (open-callback)
+    (with-callback)
     (open-url "http://github.com/neotyk/http.async.client/")
   "OK")
 
