@@ -10,6 +10,8 @@
 (defn check-url 
   "Open an async url connection - check if done"
   [url]  
+  (print (str "checking:" url "\n"))  
+  (print (str "Thread:" (Thread/currentThread)))
   (with-open [client (http/create-client)] ; Create client
     (let [resp (http/GET client url)
           status (http/status resp)
@@ -20,13 +22,15 @@
 
 (defn check-urls [urls]
   (let [agents (doall (map #(agent %) urls))]
-    (doseq [agent agents] (send-off agent open-url))
+    (doseq [agent agents] (send-off agent check-url))
     (apply await-for 5000 agents)
     (doall (map #(deref %) agents))))
 
 
 (defn root-page []
-    (prn (check-urls '("http://lethain.com" "http://willarson.com" "http://www.smh.com.aux")))    
+    (prn (check-urls 
+      '("http://lethain.com" "http://willarson.com" "http://www.smh.com.aux")
+      ))  
     "OK")
 
 
