@@ -7,17 +7,20 @@
     [http.async.client         :as http]
     [http.async.client.request :as request]))
 
+(defn check-response [resp]
+  (= 200 (:code (http/status resp))))
+
+
 (defn check-url 
   "Open an async url connection - check if done"
   [url]  
   (print (str "checking:" url "\n"))  
   (print (str "Thread:" (Thread/currentThread)))
   (with-open [client (http/create-client)] ; Create client
-    (let [resp (http/GET client url)
-          status (http/status resp)
-          headers (http/headers resp)]      
-      (http/await resp)
-      (= 200 (:code status)))))
+    (let [resp (http/GET client url)]      
+      (http/await resp) ;; will block
+      (check-response resp))))
+
 
 
 (defn check-urls [urls]
