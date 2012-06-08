@@ -18,7 +18,7 @@
 (defn check-response [resp]
   (= 200 (:code (http/status resp))))
 
-(defn get-task-value [url task-key] ((deref task-list) url) task-key)
+(defn get-task-value [url task-key] (task-key ((deref task-list) url)))
 (defn update-task-value [url task-key value]
   (defn update [all-tasks]
     (let [task-entry (all-tasks url)]
@@ -42,8 +42,6 @@
   "record a failure, possibly taking action on webhook"
   [client url count-to-failure webhook]
   (println (str "... a failure noted for " url))
-  (println ((deref task-list) url)) 
-  (println (((deref task-list) url)) :failures) ;;WTF
   (let [ fail-tally (+ 1 (get-task-value url :failures)) ]
       (println (str "failure tally is " fail-tally))
       (if (>= fail-tally count-to-failure)
