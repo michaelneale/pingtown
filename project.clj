@@ -18,7 +18,8 @@
   ;; the compujure web framework is handy (which uses ring)
   :dependencies [[org.clojure/clojure "1.3.0"]
   				       [compojure "1.0.4"]
-                 [http.async.client "0.4.5"]]
+                 [http.async.client "0.4.5"]
+                 [overtone/at-at "1.0.0"]]
 
   ;; so we can do "lein ring server" (and used by deployment plugin)				
   :dev-dependencies [[lein-ring "0.7.1"]
@@ -29,3 +30,5 @@
 
 
 )
+
+
