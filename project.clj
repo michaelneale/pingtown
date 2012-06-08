@@ -26,7 +26,7 @@
                      [lein-cloudbees "1.0.2-SNAPSHOT"]]
 
   ;; the main entry point for our app
-  :ring {:handler sample-clojure-cloudbees.core/app}
+  :ring {:handler pingtown.core/app}
 
 
 )
