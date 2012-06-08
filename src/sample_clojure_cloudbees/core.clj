@@ -8,54 +8,63 @@
     [http.async.client         :as http]
     [http.async.client.request :as request]))
 
-(def my-pool (mk-pool))
-
-;; sample data
-(def targets [
-  {:url "http://www.smh.com.au" 
-   :webhook "http://localhost:8000/smhdown"
-   :failures 2 }
-   {:url "http://www.smh.com.aux" 
-   :webhook "http://localhost:8000/smhdown"
-   :failures 2 }])
-
-;; store the failures here, keyed against url string
-(def failures (agent {"http://www.example.com" 1}))
+(def at-pool (mk-pool))
 
 
-(defn process-new-failure 
-  "We have a failure, accumulate it, and take the action if needed"
-  [url]
-  ;;(send failures )
-  )
+;; store the tasks here, protected by an agent
+(def task-list (agent {}))
+
+(def http-client (http/create-client))
 
 
 (defn check-response [resp]
   (= 200 (:code (http/status resp))))
 
-(defn ping-url 
-  "Open an async url connection - return the map of promises"
-  [client url]  
-    (http/GET client url :timeout 5000)) 
+(defn test-follow-up
+  [resp url count-to-failure webhook]
+  (if (check-response resp)
+    (println (str "... " url " appears to be OK at this time."))
+    (println (str "ATTENTION: we have a check fail on " url))))
 
-(defn ping-urls [urls]
-  (with-open [client (http/create-client)] ; Create client
-    (println "starting")
-    (let [requests (doall (map #(ping-url client %) urls))]
-      (println "dispatched.. now resting")
-      (Thread/sleep 5000)
-      (doall (map #(check-response %) requests)))))
+(defn perform-test
+  [client url wait-time count-to-failure webhook]
+  (println (str "... now checking: " url))
+  (let [resp (http/GET client url :timeout wait-time)]
+    (after wait-time
+          #(test-follow-up resp url count-to-failure webhook) at-pool)))
+
+(defn register-check
+    "create a new check"
+    [client check-config]
+    (let [task (every (check-config :interval) #(perform-test client
+                      (check-config :url) 
+                      (check-config :timeout) 
+                      (check-config :failures) 
+                      (check-config :webhook)) 
+                      at-pool)]
+      (defn append-task [ls new-task] (merge ls new-task))
+      (send task-list append-task {(check-config :url) {:task task :failures 0}})))
+
 
 
 
 (defn root-page []
-  (at (+ 10000 (now)) #(println "hello from the past!") my-pool)
-    (prn (ping-urls 
-      '("http://lethain.com" "http://willarson.com" "http://www.smh.com.aux")))  
+
+    ;;(prn (ping-urls '("http://lethain.com" "http://willarson.com" "http://www.smh.com.aux")))  
+    
     "OK")
 
 
+(defn new-task-action []
+  (register-check http-client {
+            :interval 20000 
+            :url "http://www.smh.com.au"
+            :timeout 3000
+            :failures 2
+            :webhook "http://localhost:8000/smhfail"
+            }))
   
+
 
 
 ;;
@@ -63,7 +72,7 @@
 ;;
 (defroutes main-routes    
   (GET "/" [] (root-page))
-  (GET "/another-page" [] "This is another page")  
+  (GET "/task" [] (new-task-action))  
   (route/resources "/")
   (route/not-found "<h1>Page not found</h1>"))
 

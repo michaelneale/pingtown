@@ -30,3 +30,19 @@
     (doseq [agent agents] (send-off agent check-url))
     (apply await-for 5000 agents)
     (doall (map #(deref %) agents))))
+
+
+(defn ping-url 
+  "Open an async url connection - return the map of promises"
+  [client url]  
+    (http/GET client url :timeout 5000)) 
+
+(defn ping-urls [urls]
+  (with-open [client (http/create-client)] ; Create client
+    (println "starting")
+    (let [requests (doall (map #(ping-url client %) urls))]
+      (println "dispatched.. now resting")
+      (Thread/sleep 1000)
+      (doall (map #(check-response %) requests)))))
+
+
