@@ -8,8 +8,11 @@
     [http.async.client         :as http]
     [http.async.client.request :as request]))
 
-;; TODO tracking down times, and only notifying on DOWN once ? 
-;; sending UP message when becomes available
+;; TODO invoke webhook
+;; TODO REST api
+;; TODO index.html with example
+;; TODO store tasks and load from s3 on startup
+;; TODO show list and removal of tasks by url
 
 (def at-pool (mk-pool))
 
@@ -22,40 +25,64 @@
   (= 200 (:code (http/status resp))))
 
 (defn get-task-value [url task-key] (task-key ((deref task-list) url)))
+(defn url-is-down [url] (contains? ((deref task-list) url) :outage-start))
 (defn update-task-value [url task-key value]
   (defn update [all-tasks]
     (let [task-entry (all-tasks url)]
         (merge all-tasks {url (merge task-entry {task-key value})})))
   (send task-list update))
 
+(defn remove-task-value [url task-key]
+  (defn update [all-tasks]
+    (let [task-entry (all-tasks url)]
+        (merge all-tasks {url (dissoc task-entry task-key)})))
+  (send task-list update))
+
+
+(defn notify-down [url webhook]  
+  ;;TODO: invoke webhook here
+  (println (str "DOWN " url)))
+
+(defn notify-up [url]
+  (println (str "UP " url " was down for " 
+    (- (System/currentTimeMillis)  (get-task-value url :outage-start)))))
+
 
 (defn site-down 
-  "handle the site down event - should invoke webhook, as is really down"
-  [url webhook]
-  (println (str "SITE DOWN " url " should call webhook " webhook))
-  ;;TODO PUT ACTUAL WEBHOOK CALL HERE
-  (update-task-value url :failures 0) )
+  [url webhook]  
+  (if (get-task-value url :outage-start)
+    (println (str " (already down) " url))
+    (do
+      (update-task-value url :outage-start (System/currentTimeMillis)) 
+      (notify-down url webhook))))
 
-(defn site-unavailable
-  "register that site is unavailable"
-  [url new-fail-tally]
-  (update-task-value url :failures new-fail-tally))
 
 (defn maybe-failure 
-  "record a failure, possibly taking action on webhook"
+  "record a failure, site possibly down"
   [client url count-to-failure webhook]
   (println (str "... a failure noted for " url))
   (let [ fail-tally (+ 1 (get-task-value url :failures)) ]
       (println (str "failure tally is " fail-tally))
       (if (>= fail-tally count-to-failure)
           (site-down url webhook)
-          (site-unavailable url fail-tally))))
+          (update-task-value url :failures fail-tally))))
   
+
+(defn site-available   
+  [url webhook]
+  (println (str "... " url " has OK status"))
+  (println (url-is-down url))
+  (if (url-is-down url)
+    (do      
+      (notify-up url)      
+      (remove-task-value url :outage-start)
+      (update-task-value url :failures 0))    
+    (println (str "... " url " is still OK, no action taken."))))
 
 (defn test-follow-up
   [client resp url count-to-failure webhook]
-  (if (check-response resp)
-    (println (str "... " url " appears to be OK at this time."))
+  (if (check-response resp)  
+    (site-available url webhook)  
     (maybe-failure client url count-to-failure webhook)))
 
 (defn perform-test
@@ -87,7 +114,7 @@
 (defn new-task-action []
   (register-check http-client {
             :interval 10000
-            :url "http://www.smh.com.au"
+            :url "http://localhost:8000"
             :timeout 3000
             :failures 2
             :webhook "http://localhost:8000/smhfail"
