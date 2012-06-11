@@ -69,6 +69,7 @@
 (defroutes main-routes  
   (GET "/" [] (resp/redirect "/index.html"))
   (POST "/tasks" {form-params :form-params} (validate-and-create form-params))
+  (DELETE "/tasks" {form-params :form-params} (remove-check-for (form-params "url")))
   (GET "/tasks" [] (print-tasks))
   (GET "/test" [] (test-task-action))    
   (route/resources "/")

@@ -91,9 +91,13 @@
     (after wait-time
           #(test-follow-up client resp url count-to-failure webhook) at-pool)))
 
-(defn register-check
+(defn store-config [config] (println "IMPLEMENT ME !"))
+(defn remove-from-storage [url] (println "IMPLEMENT ME !"))
+
+(defn register-check    
     "create a new check"
     [check-config]
+    (store-config check-config)
     (println (str "Registering " check-config))
     (let [task (every (check-config :interval) 
                       #(perform-test http-client
@@ -105,5 +109,10 @@
       (defn append-task [ls new-task] (merge ls new-task))
       (send task-list append-task {(check-config :url) {:task task :failures 0}})))
 
-
+(defn remove-check-for [url]
+    (remove-from-storage url)
+    ;; TODO: remove from s3 here
+    (let [task-entry ((deref task-list) url)]
+        (stop (:task task-entry))
+        (send task-list (fn [all-tasks] (dissoc all-tasks url)))))
 
