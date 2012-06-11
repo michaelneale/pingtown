@@ -16,6 +16,8 @@
 
 (defn print-tasks [] (str (deref task-list)))
 
+(defn check-existing? [url] (contains? (deref task-list) url))
+
 ;; functions to do the evil mutation of tasks via agent: 
 (defn get-task-value [url task-key] (task-key ((deref task-list) url)))
 (defn update-task-value [url task-key value]

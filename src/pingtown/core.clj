@@ -48,6 +48,8 @@
    (cond 
       (not (contains? params "url")) 
         {:status 400 :body "Please provide a [url] to check"}
+      (check-existing? (params "url"))
+        {:status 409 :body "A check for that site already exists"}
       (not (contains? params "webhook")) 
         {:status 400 :body "Please provide a [webhook] to call"}
       (and (contains? params "interval") (> 30 (nbr (params "interval"))))         
