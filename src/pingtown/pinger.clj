@@ -92,6 +92,7 @@
 (defn register-check
     "create a new check"
     [check-config]
+    (println (str "Registering " check-config))
     (let [task (every (check-config :interval) 
                       #(perform-test http-client
                         (check-config :url) 
