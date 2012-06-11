@@ -8,6 +8,8 @@
     [http.async.client.request :as request]))
 
 
+;; I know, dodgy file name, this just a dumping ground for experiments
+
 (defn check-response [resp]
   (= 200 (:code (http/status resp))))
 
