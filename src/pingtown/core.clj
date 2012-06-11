@@ -19,24 +19,24 @@
 ;; store the tasks here, protected by an agent - maybe a defrecord or type?
 (def task-list (agent {}))
 
-(def http-client (http/create-client))
-
-(defn check-response [resp]
-  (= 200 (:code (http/status resp))))
-
+;; functions to do the evil mutation via agent: 
 (defn get-task-value [url task-key] (task-key ((deref task-list) url)))
-(defn url-is-down [url] (contains? ((deref task-list) url) :outage-start))
 (defn update-task-value [url task-key value]
   (defn update [all-tasks]
     (let [task-entry (all-tasks url)]
         (merge all-tasks {url (merge task-entry {task-key value})})))
   (send task-list update))
-
 (defn remove-task-value [url task-key]
   (defn update [all-tasks]
     (let [task-entry (all-tasks url)]
         (merge all-tasks {url (dissoc task-entry task-key)})))
   (send task-list update))
+
+
+(def http-client (http/create-client))
+
+(defn check-response [resp]
+  (= 200 (:code (http/status resp))))
 
 
 (defn notify-down [url webhook]  
@@ -48,9 +48,11 @@
     (- (System/currentTimeMillis)  (get-task-value url :outage-start)))))
 
 
+(defn site-is-down? [url] (contains? ((deref task-list) url) :outage-start))
+
 (defn site-down 
   [url webhook]  
-  (if (get-task-value url :outage-start)
+  (if (site-is-down? url)
     (println (str " (already down) " url))
     (do
       (update-task-value url :outage-start (System/currentTimeMillis)) 
@@ -61,8 +63,7 @@
   "record a failure, site possibly down"
   [client url count-to-failure webhook]
   (println (str "... a failure noted for " url))
-  (let [ fail-tally (+ 1 (get-task-value url :failures)) ]
-      (println (str "failure tally is " fail-tally))
+  (let [ fail-tally (+ 1 (get-task-value url :failures)) ]      
       (if (>= fail-tally count-to-failure)
           (site-down url webhook)
           (update-task-value url :failures fail-tally))))
@@ -70,9 +71,7 @@
 
 (defn site-available   
   [url webhook]
-  (println (str "... " url " has OK status"))
-  (println (url-is-down url))
-  (if (url-is-down url)
+  (if (site-is-down? url)
     (do      
       (notify-up url)      
       (remove-task-value url :outage-start)
