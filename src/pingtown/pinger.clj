@@ -16,6 +16,8 @@
 
 (defn print-tasks [] (str (deref task-list)))
 
+;;(defn print-tasks []  (map (fn [e] (e 0)) (deref task-list)))
+
 (defn check-existing? [url] (contains? (deref task-list) url))
 
 ;; functions to do the evil mutation of tasks via agent: 
@@ -35,8 +37,7 @@
 
 (def http-client (http/create-client))
 
-(defn check-response [resp]
-  (= 200 (:code (http/status resp))))
+(defn check-response [resp] (= 200 (:code (http/status resp))))
 
 
 (defn notify-down [url webhook]  
@@ -110,8 +111,7 @@
       (send task-list append-task {(check-config :url) {:task task :failures 0}})))
 
 (defn remove-check-for [url]
-    (remove-from-storage url)
-    ;; TODO: remove from s3 here
+    (remove-from-storage url)    
     (let [task-entry ((deref task-list) url)]
         (stop (:task task-entry))
         (send task-list (fn [all-tasks] (dissoc all-tasks url)))))
