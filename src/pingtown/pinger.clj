@@ -41,7 +41,7 @@
   ;;TODO: invoke webhook here
   (println (str "DOWN " url)))
 
-(defn notify-up [url]
+(defn notify-up [url webhook]
   (println (str "UP " url " was down for " 
     (- (System/currentTimeMillis)  (get-task-value url :outage-start)))))
 
@@ -51,7 +51,7 @@
 (defn site-down 
   [url webhook]  
   (if (site-is-down? url)
-    (println (str " (already down) " url))
+    (println (str "... (already noted as down) " url))
     (do
       (update-task-value url :outage-start (System/currentTimeMillis)) 
       (notify-down url webhook))))
@@ -59,19 +59,19 @@
 
 (defn maybe-failure 
   "record a failure, site possibly down"
-  [client url count-to-failure webhook]
-  (println (str "... a failure noted for " url))
+  [client url count-to-failure webhook]  
   (let [ fail-tally (+ 1 (get-task-value url :failures)) ]      
+      (update-task-value url :failures fail-tally)
       (if (>= fail-tally count-to-failure)
           (site-down url webhook)
-          (update-task-value url :failures fail-tally))))
+          (println (str "... a failure noted for " url)))))
   
 
 (defn site-available   
   [url webhook]
   (if (site-is-down? url)
     (do      
-      (notify-up url)      
+      (notify-up url webhook)      
       (remove-task-value url :outage-start)
       (update-task-value url :failures 0))    
     (println (str "... " url " is still OK, no action taken."))))
