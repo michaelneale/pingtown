@@ -14,6 +14,8 @@
 ;; store the tasks here, protected by an agent - maybe a defrecord or type?
 (def task-list (agent {}))
 
+(defn print-tasks [] (str (deref task-list)))
+
 ;; functions to do the evil mutation of tasks via agent: 
 (defn get-task-value [url task-key] (task-key ((deref task-list) url)))
 (defn update-task-value [url task-key value]
@@ -26,6 +28,7 @@
     (let [task-entry (all-tasks url)]
         (merge all-tasks {url (dissoc task-entry task-key)})))
   (send task-list update))
+
 
 
 (def http-client (http/create-client))
@@ -88,9 +91,9 @@
 
 (defn register-check
     "create a new check"
-    [client check-config]
+    [check-config]
     (let [task (every (check-config :interval) 
-                      #(perform-test client
+                      #(perform-test http-client
                         (check-config :url) 
                         (check-config :timeout) 
                         (check-config :failures) 
