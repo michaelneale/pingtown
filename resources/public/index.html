@@ -115,7 +115,7 @@ curl -X "DELETE" -d "url=http://localhost:8000" http://localhost:3000/tasks
             <p style="margin-bottom: 0;">
                 PingTOWN will ping your specified URL repeatedly (as per the interval setting) - each time it waits for a 200 OK response. Should it fail to return a HTTP 200 code (either by not returning a result, returning an error, or timing out), enough times in a row, then the site will be deemed to be down. 
                 <p>
-                In this case the webhook/pingdom service will be invoked, reporting that the site is down. Once the site responds successfully again, then the webhook/pingdom service will be "resolved" automatically. The Pingdom API is documented
+                In this case the webhook/pingdom service will be invoked, reporting that the site is down. Once the site responds successfully again, then the webhook/pingdom service will be "resolved" automatically (and it will contain an outage report tracking how long it was down for). The Pingdom API is documented
                 <a href="http://www.pagerduty.com/docs/integration-api/integration-api-documentation">here</a>. If you use the default, you don't need to care about this.
             </p>
           </div>
