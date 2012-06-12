@@ -3,27 +3,12 @@
   (:use ring.middleware.resource)  
   (:use overtone.at-at)
   (:use pingtown.pinger)
+  (:use pingtown.pagerduty)
   (:require 
 	  [compojure.route           :as route]
 	  [compojure.handler         :as handler]
     [ring.util.response :as resp]))
 
-;; TODO invoke webhook
-;; TODO REST api
-;; TODO index.html with example
-;; TODO store tasks and load from s3 on startup
-;; TODO show list and removal of tasks by url
-
-
-(defn test-task-action []
-  (register-check {
-            :interval 10000
-            :url "http://localhost:8000"
-            :timeout 3000
-            :failures 2
-            :webhook "http://localhost:8000/smhfail"
-            }))
- 
 
 
 (defn nbr [s] (Integer/parseInt s))
@@ -37,7 +22,7 @@
             :failures (if (contains? p "failures") 
                           (nbr (p "failures")) 2)
             :url (p "url")
-            :webhook (p "webhook")})
+            :webhook "use PD"})
         {:status 200 :body "Registered check OK"})
 
 
@@ -50,8 +35,6 @@
         {:status 400 :body "Please provide a [url] to check"}
       (check-existing? (params "url"))
         {:status 409 :body "A check for that site already exists"}
-      (not (contains? params "webhook")) 
-        {:status 400 :body "Please provide a [webhook] to call"}
       (and (contains? params "interval") (> 30 (nbr (params "interval"))))         
         {:status 400 :body "Interval should be at least 30 (seconds)"}
       (and (contains? params "timeout") (> 5 (nbr (params "timeout")) )) 
@@ -67,11 +50,10 @@
 ;; Rest application: 
 ;;
 (defroutes main-routes  
-  (GET "/" [] (resp/redirect "/index.html"))
+  (GET "/" [] (resp/redirect "/index.html"))  
   (POST "/tasks" {form-params :form-params} (validate-and-create form-params))
   (DELETE "/tasks" {form-params :form-params} (remove-check-for (form-params "url")))
-  (GET "/tasks" [] (print-tasks))
-  (GET "/test" [] (test-task-action))    
+  (GET "/tasks" [] (print-tasks))  
   (route/resources "/")
   (route/not-found "<h1>Page not found</h1>"))
 

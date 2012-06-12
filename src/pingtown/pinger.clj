@@ -2,6 +2,7 @@
   (:use compojure.core)  
   (:use ring.middleware.resource)  
   (:use overtone.at-at)
+  (:use pingtown.pagerduty)
   (:require 
       [compojure.route           :as route]
       [compojure.handler         :as handler]
@@ -34,20 +35,19 @@
   (send task-list update))
 
 
-
 (def http-client (http/create-client))
 
 (defn check-response [resp] (= 200 (:code (http/status resp))))
 
 
-(defn notify-down [url webhook]  
-  ;;TODO: invoke webhook here
-  (println (str "DOWN " url)))
+(defn notify-down [url webhook]    
+  (println (str "DOWN " url))
+  (pd-down url))
 
 (defn notify-up [url webhook]
-  (println (str "UP " url " was down for " 
-    (- (System/currentTimeMillis)  (get-task-value url :outage-start)))))
-
+  (let [downtime (- (System/currentTimeMillis)  (get-task-value url :outage-start))] 
+      (println (str "UP " url " was down for " downtime "ms"))
+      (pd-up url downtime)))
 
 (defn site-is-down? [url] (contains? ((deref task-list) url) :outage-start))
 
@@ -58,7 +58,6 @@
     (do
       (update-task-value url :outage-start (System/currentTimeMillis)) 
       (notify-down url webhook))))
-
 
 (defn maybe-failure 
   "record a failure, site possibly down"
