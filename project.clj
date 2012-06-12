@@ -1,9 +1,9 @@
 (defproject sample-clojure-cloudbees "1.0.0-SNAPSHOT"
-  :description "Sample clojure application - clojure 1.3 !"
+  :description "PingTOWN"
 
 
   ;; Your app id here ! account/appname
-  :cloudbees-app-id "michaelvideo/sampleclojure"
+  :cloudbees-app-id "webinar/pingtown"
 
   ;; punch in your cloudbees details - don't put your secrets in this file or you will 
   ;; accidentally put them in git !  

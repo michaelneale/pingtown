@@ -1,6 +1,144 @@
-hello !
+<!DOCTYPE html>
+    <!-- 
+
+    hello !
 
 curl -X "POST" -d "url=http://localhost:8000&interval=30" http://localhost:3000/tasks
 curl -X "POST" -d "url=http://localhost:9000&interval=30" http://localhost:3000/tasks
 
 curl -X "DELETE" -d "url=http://localhost:8000" http://localhost:3000/tasks
+
+-->
+
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>PingTOWN from CloudBees</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Annoy michael">
+    <meta name="author" content="michael">
+
+    <!-- Le styles -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+    </style>
+    <link href="css/bootstrap-responsive.css" rel="stylesheet">
+
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="#">PingTOWN</a>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li class="active"><a href="#">Home</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div>
+        <div class="row">
+                <div class="span2"><img src="img/shameless-ping-icon.png"></img></div>
+                <div class="span2"><h1>PingTOWN</h1><p>Cover your user visible URLs with external monitoring.</p></div>
+        </div>
+      </div>
+      <hr>
+
+
+
+      <!-- Example row of columns -->
+      <div class="row">
+        <div class="span6">
+          <h2>Creating a new check</h2>
+           <p>create a check to periodically monitor your app for downtime, for example:</p>
+          <p>
+            <pre class="prettyprint">curl -X "POST" -d "url=$URL&interval=30" http://pingtown.beescloud.com/tasks</pre>
+          </p>
+          <p>   
+            The parameters you need to know (above uses defaults)
+            <table class="table table-bordered table-striped">
+            <thead>
+             <tr>
+               <th style="width: 150px;">Parameter</th>
+               <th>Description</th>
+             </tr>
+            </thead>
+            <tbody>
+             <tr>
+               <td>url</td>
+               <td><em>(Mandatory)</em> The site you want to check. Any URL, must return 200 to confirm it is ok.</td>
+             </tr>
+             <tr>
+               <td>interval</td>
+               <td>How frequent, in seconds, to check your site for availability. Default is 60.</td>
+             </tr>
+             <tr>
+               <td>failures</td>
+               <td>The number of consecutive failures needed to trigger your site as "down". Default is 2.</td>
+             </tr>
+             <tr>
+               <td>timeout</td>
+               <td>How long, in seconds, to wait for your site to respond with 200 OK before deeming it not responding (default is 5)</td>
+             </tr>
+             <tr>
+               <td>webhook</td>
+               <td>by default, pagerduty is used for notifications/alerts, but setting this will cause a webhook to be called when failure happens or alert is cleared (as per the PD api - but to your endpoint).</td>
+             </tr>
+
+            </tbody>
+          </table>
+          </p>
+        </div>
+        <div class="span6">
+           <h2>Deleting a check</h2>
+           <p>Once a URL is no longer live, <b>DON'T forget to delete it</b>:</p>
+           <pre class="prettyprint">curl -X "DELETE" -d "url=$URL" http://pingtown.beescloud.com/tasks</pre>          
+           <h2>How it works</h2>
+           <div class="alert">
+            <p style="margin-bottom: 0;">
+                PingTOWN will ping your specified URL repeatedly (as per the interval setting) - each time it waits for a 200 OK response. Should it fail to return a HTTP 200 code (either by not returning a result, returning an error, or timing out), enough times in a row, then the site will be deemed to be down. 
+                <p>
+                In this case the webhook/pingdom service will be invoked, reporting that the site is down. Once the site responds successfully again, then the webhook/pingdom service will be "resolved" automatically. The Pingdom API is documented
+                <a href="http://www.pagerduty.com/docs/integration-api/integration-api-documentation">here</a>. If you use the default, you don't need to care about this.
+            </p>
+          </div>
+           
+ 
+           <hr>
+       </div>
+       <!--
+        <div class="span4">
+          <h2>Heading</h2>
+          <p>Donec sed odio dui. Cras justo odio, dapibus ac facilisis in, egestas eget quam. Vestibulum id ligula porta felis euismod semper. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
+          <p><a class="btn" href="#">View details &raquo;</a></p>
+        </div>
+    -->
+      </div>
+
+      <hr>
+
+      <footer>
+        <p></p>
+      </footer>
+
+    </div> <!-- /container -->
+
+  </body>
+</html>
