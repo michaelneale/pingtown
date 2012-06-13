@@ -23,7 +23,7 @@
                           (nbr (p "failures")) 2)
             :url (p "url")
             :webhook "use PD"})
-        {:status 200 :body "Registered check OK"})
+        {:status 200 :body "-- Registered check OK --\n"})
 
 
 
@@ -34,7 +34,9 @@
       (not (contains? params "url")) 
         {:status 400 :body "Please provide a [url] to check"}
       (check-existing? (params "url"))
-        {:status 409 :body "A check for that site already exists"}
+        {:status 202 :body "A check for that site already exists"}
+      (not (.startsWith (params "url") "http"))
+        {:status 400 :body "Url must start with http"}  
       (and (contains? params "interval") (> 30 (nbr (params "interval"))))         
         {:status 400 :body "Interval should be at least 30 (seconds)"}
       (and (contains? params "timeout") (> 5 (nbr (params "timeout")) )) 
