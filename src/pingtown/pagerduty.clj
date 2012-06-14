@@ -9,14 +9,15 @@
 
 (defn- down-message    
     "create a pagerduty alert message"
-    [site] 
+    [site fail-reason] 
     (str "{
         \"service_key\": \"" pagerduty-key  "\",
         \"incident_key\": \"" site "\",
         \"event_type\": \"trigger\",
         \"description\": \"DOWN " site "\",
         \"details\": {
-        \"reported by\": \"PingTown (tm)\"        
+        \"reported by\": \"PingTown (tm)\",        
+        \"failure-reason\": \"" fail-reason "\",
         }
     }"))
 
@@ -35,7 +36,6 @@
     }"))
 
 
-
 (defn- send-message [msg]   
     (def pd-endpoint "https://events.pagerduty.com/generic/2010-04-15/create_event.json") 
     (println "calling pager duty ..")
@@ -46,8 +46,8 @@
             (= 200 (:status resp)))))
 
             
-(defn pd-down [site]
-    (send-message (down-message site)))
+(defn pd-down [site fail-reason]
+    (send-message (down-message site fail-reason)))
 
 (defn pd-up [site downtime]
     (send-message (up-message site downtime)))

@@ -37,12 +37,26 @@
 
 (def http-client (http/create-client))
 
-(defn check-response [resp] (= 200 (:code (http/status resp))))
+(defn check-response 
+  "check the response against the expected. If 
+  expected is not set, then it has to be < 400 to be success
+  returns {:up :reason}"
+  [resp expected] 
+  (let [status (http/status resp)
+        done (http/done? resp)]
+    (cond 
+      (not done) {:up false :reason "No response/timeout" }
+      expected (if (= expected status) 
+                        {:up true}
+                        {:up false :reason 
+                          (str "Got response " status " expected " expected)})
+      (< status 400) {:up true}
+      :else {:up false :result (str "Response code " status )})))
 
 
-(defn notify-down [url webhook]    
+(defn notify-down [url webhook fail-reason]    
   (println (str "DOWN " url))
-  (pd-down url))
+  (pd-down url fail-reason))
 
 (defn notify-up [url webhook]
   (let [downtime (- (System/currentTimeMillis)  (get-task-value url :outage-start))] 
@@ -52,21 +66,22 @@
 (defn site-is-down? [url] (contains? ((deref task-list) url) :outage-start))
 
 (defn site-down 
-  [url webhook]  
+  [url webhook fail-reason]  
   (if (site-is-down? url)
     (println (str "... (already noted as down) " url))
     (do
       (update-task-value url :outage-start (System/currentTimeMillis)) 
-      (notify-down url webhook))))
+      (notify-down url webhook fail-reason))))
 
 (defn maybe-failure 
   "record a failure, site possibly down"
-  [client url count-to-failure webhook]  
+  [client url count-to-failure webhook fail-reason]  
   (let [ fail-tally (+ 1 (get-task-value url :failures)) ]      
       (update-task-value url :failures fail-tally)
       (if (>= fail-tally count-to-failure)
-          (site-down url webhook)
-          (println (str "... a failure noted for " url)))))
+          (site-down url webhook fail-reason)
+          (println (str "... a failure noted for " 
+                    url " failure reason " fail-reason)))))
   
 
 (defn site-available   
@@ -79,17 +94,20 @@
     (println (str "... " url " is still OK, no action taken."))))
 
 (defn test-follow-up
-  [client resp url count-to-failure webhook]
-  (if (check-response resp)  
-    (site-available url webhook)  
-    (maybe-failure client url count-to-failure webhook)))
+  [client resp url count-to-failure webhook expected-code]
+  (let [result (check-response resp expected-code)] 
+    (if (:ok result)
+      (site-available url webhook)  
+      (maybe-failure client url count-to-failure webhook (:reason result)))))
 
+  
 (defn perform-test
-  [client url wait-time count-to-failure webhook]
+  [client url wait-time count-to-failure webhook expected-code]
   (println (str "... now checking: " url))
   (let [resp (http/GET client url :timeout wait-time)]
     (after wait-time
-          #(test-follow-up client resp url count-to-failure webhook) at-pool)))
+          #(test-follow-up client resp url 
+            count-to-failure webhook expected-code) at-pool)))
 
 (defn store-config [config] (println "IMPLEMENT ME !"))
 (defn remove-from-storage [url] (println "IMPLEMENT ME !"))
@@ -104,7 +122,8 @@
                         (check-config :url) 
                         (check-config :timeout) 
                         (check-config :failures) 
-                        (check-config :webhook)) 
+                        (check-config :webhook
+                        (check-config :expected-code))) 
                       at-pool)]
       (defn append-task [ls new-task] (merge ls new-task))
       (send task-list append-task {(check-config :url) {:task task :failures 0}})))

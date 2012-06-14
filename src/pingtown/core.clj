@@ -22,7 +22,8 @@
             :failures (if (contains? p "failures") 
                           (nbr (p "failures")) 2)
             :url (p "url")
-            :webhook "use PD"})
+            :webhook "use PD"}
+            :expected-code (p "expected"))
         {:status 200 :body "-- Registered check OK --\n"})
 
 
@@ -32,7 +33,7 @@
   [params]
    (cond 
       (not (contains? params "url")) 
-        {:status 400 :body "Please provide a [url] to check"}
+        {:status 400 :body "Please provide a [url] to check"}      
       (check-existing? (params "url"))
         {:status 202 :body "A check for that site already exists"}
       (not (.startsWith (params "url") "http"))
