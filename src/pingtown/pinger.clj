@@ -127,7 +127,7 @@
 (defn remove-check-for [url]
     (remove-from-storage url)    
     (let [task-entry ((deref task-list) url)]
-        (println "STOPPING")
+        (println (str "STOPPING " task-entry " for " url))
         (stop (:task task-entry))
         (send task-list (fn [all-tasks] (dissoc all-tasks url)))))
 
