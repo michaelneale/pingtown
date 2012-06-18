@@ -37,100 +37,119 @@
 
 (def http-client (http/create-client))
 
-(defn check-response 
-  "check the response against the expected. If 
-  expected is not set, then it has to be < 400 to be success
-  returns {:up :reason}"
-  [resp expected] 
-  (let [status (http/status resp)
-        done (http/done? resp)]
-    (cond 
-      (not done) {:up false :reason "No response/timeout" }
-      expected (if (= expected status) 
-                        {:up true}
-                        {:up false :reason 
-                          (str "Got response " status " expected " expected)})
-      (< status 400) {:up true}
-      :else {:up false :result (str "Response code " status )})))
 
+(defn notify-down [conf fail-reason]    
+  (println (str "DOWN " (:url conf)))
+  (pd-down conf fail-reason))
 
-(defn notify-down [url webhook fail-reason]    
-  (println (str "DOWN " url))
-  (pd-down url fail-reason))
-
-(defn notify-up [url webhook]
-  (let [downtime (- (System/currentTimeMillis)  (get-task-value url :outage-start))] 
+(defn notify-up [conf]
+  (let [url (:url conf)
+        downtime (- (System/currentTimeMillis)  
+                (get-task-value url :outage-start))] 
       (println (str "UP " url " was down for " downtime "ms"))
-      (pd-up url downtime)))
+      (pd-up conf downtime)))
 
 (defn site-is-down? [url] (contains? ((deref task-list) url) :outage-start))
 
 (defn site-down 
-  [url webhook fail-reason]  
-  (if (site-is-down? url)
-    (println (str "... (already noted as down) " url))
-    (do
-      (update-task-value url :outage-start (System/currentTimeMillis)) 
-      (notify-down url webhook fail-reason))))
+  "Maybe send a notification that the site is down."
+  [conf fail-reason]  
+  (if (site-is-down? (:url conf))
+    (println (str "... (already noted as down) " (:url conf)))    
+    (if (notify-down conf fail-reason)
+        (update-task-value (:url conf) :outage-start (System/currentTimeMillis)) 
+        (println "ERR: Unable to contact endpoint for alert"))))
 
 (defn maybe-failure 
-  "record a failure, site possibly down"
-  [client url count-to-failure webhook fail-reason]  
-  (let [ fail-tally (+ 1 (get-task-value url :failures)) ]      
-      (update-task-value url :failures fail-tally)
-      (if (>= fail-tally count-to-failure)
-          (site-down url webhook fail-reason)
+  "record a failure, site possibly really down"
+  [client conf fail-reason];;url count-to-failure webhook fail-reason]  
+  (let [ fail-tally (+ 1 (get-task-value (:url conf) :failures)) ]      
+      (update-task-value (:url conf) :failures fail-tally)
+      (if (>= fail-tally (:failures conf))
+          (site-down conf fail-reason)
           (println (str "... a failure noted for " 
-                    url " failure reason " fail-reason)))))
+                    (:url conf) " failure reason " fail-reason)))))
   
 
-(defn site-available   
-  [url webhook]
-  (if (site-is-down? url)
+(defn site-available  
+  "Maybe notify that site is back up, or not." 
+  [conf]
+  (if (site-is-down? (:url conf))
     (do      
-      (notify-up url webhook)      
-      (remove-task-value url :outage-start)
-      (update-task-value url :failures 0))    
-    (println (str "... " url " is still OK, no action taken."))))
+      (notify-up conf)      
+      (remove-task-value (:url conf) :outage-start)
+      (update-task-value (:url conf) :failures 0))    
+    (println (str "... " (:url conf) " is still OK, no action taken."))))
+
+(defn check-response 
+  "check the response against the expected. If 
+  expected is not set, then it has to be < 400 to be success
+  returns {:up :reason}"
+  [resp conf]
+  
+  (let [status (:code (http/status resp))
+        done (http/done? resp)
+        expected (:expected-code conf)
+        upper-status (:expected-upper conf)]    
+    (cond 
+      (http/failed? resp) {:up false :reason (str (http/error resp))}
+      (= nil status) {:up false :reason "No response/timeout"}           
+      (not done) {:up false :reason "Timeout" }
+      expected (if (= expected status) 
+                        {:up true :reason "Got what we wanted"}
+                        {:up false :reason 
+                          (str "Got response " status " expected " expected)})
+      (< status upper-status)  {:up true :reason "Is lower than upper-status"}
+      :else {:up false :reason (str "Response: " status )})))
+
 
 (defn test-follow-up
-  [client resp url count-to-failure webhook expected-code]
-  (let [result (check-response resp expected-code)] 
-    (if (:ok result)
-      (site-available url webhook)  
-      (maybe-failure client url count-to-failure webhook (:reason result)))))
+  [client resp conf];;url count-to-failure webhook expected-code]
+  (println "test follow up called")
+  (let [result (check-response resp conf)] 
+    (println (str "Result was " result))
+    (if (:up result)
+      (site-available conf)  
+      (maybe-failure client conf (:reason result)))))
 
   
 (defn perform-test
-  [client url wait-time count-to-failure webhook expected-code]
-  (println (str "... now checking: " url))
-  (let [resp (http/GET client url :timeout wait-time)]
-    (after wait-time
-          #(test-follow-up client resp url 
-            count-to-failure webhook expected-code) at-pool)))
+  [client conf];;url wait-time count-to-failure webhook expected-code]
+  (println (str "... now checking: " (:url conf)))
+  (let [resp (http/GET client (:url conf) :timeout (conf :timeout))]
+    (after (:timeout conf)
+          #(test-follow-up client resp conf) at-pool)))
 
 (defn store-config [config] (println "IMPLEMENT ME !"))
-(defn remove-from-storage [url] (println "IMPLEMENT ME !"))
+(defn remove-from-storage [url] (println (str "IMPLEMENT ME REMOVE!" url)))
 
-(defn register-check    
-    "create a new check"
-    [check-config]
-    (store-config check-config)
-    (println (str "Registering " check-config))
-    (let [task (every (check-config :interval) 
-                      #(perform-test http-client
-                        (check-config :url) 
-                        (check-config :timeout) 
-                        (check-config :failures) 
-                        (check-config :webhook
-                        (check-config :expected-code))) 
-                      at-pool)]
-      (defn append-task [ls new-task] (merge ls new-task))
-      (send task-list append-task {(check-config :url) {:task task :failures 0}})))
 
 (defn remove-check-for [url]
     (remove-from-storage url)    
     (let [task-entry ((deref task-list) url)]
+        (println "STOPPING")
         (stop (:task task-entry))
         (send task-list (fn [all-tasks] (dissoc all-tasks url)))))
+
+
+(defn maybe-expire [conf]
+    (if (:expires-after conf)
+      (after (:expires-after conf) 
+          #(remove-check-for (:url conf)) at-pool)))
+
+(defn register-check    
+    "create a new check"
+    [conf]
+    (store-config conf)
+    (println (str "Registering " conf))
+    (let [task (every (conf :interval) 
+                      #(perform-test http-client conf) 
+                        at-pool
+                        :initial-delay 
+                        (if (:initial-delay conf) 
+                          (:initial-delay conf) 0))]
+      (maybe-expire conf)
+      (defn append-task [ls new-task] (merge ls new-task))
+      (send task-list append-task {(conf :url) {:task task :failures 0}})))
+
 

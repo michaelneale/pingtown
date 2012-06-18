@@ -17,7 +17,7 @@
         \"description\": \"DOWN " site "\",
         \"details\": {
         \"reported by\": \"PingTown (tm)\",        
-        \"failure-reason\": \"" fail-reason "\",
+        \"failure-reason\": \"" fail-reason "\"
         }
     }"))
 
@@ -40,17 +40,19 @@
     (def pd-endpoint "https://events.pagerduty.com/generic/2010-04-15/create_event.json") 
     (println "calling pager duty ..")
     (with-open [client (http/create-client)] ; Create client
-        (let [resp (http/POST client pd-endpoint :body msg)]                
+        (let [resp (http/POST client pd-endpoint :body msg)
+              status (http/status resp)]                
             (http/await resp)  ;; this will make it wait              
             (println (http/string resp))
-            (= 200 (:status resp)))))
+            (println status)
+            (= 200 (:code status)))))
 
             
-(defn pd-down [site fail-reason]
-    (send-message (down-message site fail-reason)))
+(defn pd-down [conf fail-reason]
+    (send-message (down-message (:url conf) fail-reason)))
 
-(defn pd-up [site downtime]
-    (send-message (up-message site downtime)))
+(defn pd-up [conf downtime]
+    (send-message (up-message (:url conf) downtime)))
 
 
 

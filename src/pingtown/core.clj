@@ -13,17 +13,28 @@
 
 (defn nbr [s] (Integer/parseInt s))
 
+(defn maybe-millis [params field otherwise]
+  (if (contains? params field)
+    (* 1000 (nbr (params field)))
+    otherwise))
+
+(defn maybe-nbr [params field otherwise]
+  (if (contains? params field)
+    (nbr (params field))
+    otherwise))
+
+
 (defn create-check [p]
       (register-check {
-            :interval (if (contains? p "interval") 
-                          (* 1000 (nbr (p "interval"))) 60000)
-            :timeout (if (contains? p "timeout") 
-                          (* 1000 (nbr (p "timeout"))) 8000)
-            :failures (if (contains? p "failures") 
-                          (nbr (p "failures")) 2)
+            :interval (maybe-millis p "interval" 60000) 
+            :timeout (maybe-millis p "timeout" 8000)                           
+            :failures (maybe-nbr p "failures" 2)
             :url (p "url")
-            :webhook "use PD"}
-            :expected-code (p "expected"))
+            :webhook (p "endpoint")
+            :expected-code (maybe-nbr p "expected_code" nil)
+            :expected-upper (maybe-nbr p "expected_code_below" 400)
+            :initial-delay (maybe-millis p "initial_delay" nil)
+            :expires-after (maybe-millis p "expires_after" nil)})
         {:status 200 :body "-- Registered check OK --\n"})
 
 
