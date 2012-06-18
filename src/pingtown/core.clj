@@ -68,6 +68,7 @@
   (POST "/tasks" {form-params :form-params} (validate-and-create form-params))
   (DELETE "/tasks" {form-params :form-params} (remove-check-for (form-params "url")))
   (GET "/tasks" [] (print-tasks))  
+  (GET "/quick" [] (quick-check))
   (route/resources "/")
   (route/not-found "<h1>Page not found</h1>"))
 

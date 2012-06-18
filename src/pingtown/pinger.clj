@@ -81,26 +81,37 @@
       (update-task-value (:url conf) :failures 0))    
     (println (str "... " (:url conf) " is still OK, no action taken."))))
 
+(defn quick-check []
+  (let [resp (http/GET http-client "http://ec2-50-19-49-216.compute-1.amazonaws.com" :timeout 2000)]
+    (Thread/sleep 2001)
+    ;;(println (http/failed? resp))
+    (println "1")
+    (println (http/done? resp))
+    (println "2")
+    (println (http/status resp))
+    (println "3")))
+
 (defn check-response 
   "check the response against the expected. If 
   expected is not set, then it has to be < 400 to be success
   returns {:up :reason}"
   [resp conf]
   
-  (let [status (:code (http/status resp))
-        done (http/done? resp)
+  (let [done (http/done? resp)
         expected (:expected-code conf)
-        upper-status (:expected-upper conf)]    
+        upper-status (:expected-upper conf)] 
     (cond 
-      (http/failed? resp) {:up false :reason (str (http/error resp))}
-      (= nil status) {:up false :reason "No response/timeout"}           
       (not done) {:up false :reason "Timeout" }
-      expected (if (= expected status) 
+      (http/failed? resp) {:up false :reason (str (http/error resp))}
+      (= nil (:code (http/status resp))) {:up false :reason "No response"}                 
+      expected (if (= expected (:code (http/status resp))) 
                         {:up true :reason "Got what we wanted"}
                         {:up false :reason 
-                          (str "Got response " status " expected " expected)})
-      (< status upper-status)  {:up true :reason "Is lower than upper-status"}
-      :else {:up false :reason (str "Response: " status )})))
+                          (str "Got response " (:code (http/status resp))
+                           " expected " expected)})
+      (< (:code (http/status resp)) upper-status)  
+          {:up true :reason "Is lower than upper-status"}
+      :else {:up false :reason (str "Response" resp )})))
 
 
 (defn test-follow-up
