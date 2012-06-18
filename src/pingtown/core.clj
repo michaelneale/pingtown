@@ -34,7 +34,9 @@
             :expected-code (maybe-nbr p "expected_code" nil)
             :expected-upper (maybe-nbr p "expected_code_below" 400)
             :initial-delay (maybe-millis p "initial_delay" nil)
-            :expires-after (maybe-millis p "expires_after" nil)})
+            :expires-after (maybe-millis p "expires_after" nil)
+            :service-key (p "service_key")
+            })
         {:status 200 :body "-- Registered check OK --\n"})
 
 

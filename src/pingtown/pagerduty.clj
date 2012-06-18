@@ -9,9 +9,9 @@
 
 (defn- down-message    
     "create a pagerduty alert message"
-    [site fail-reason] 
+    [site fail-reason service-key] 
     (str "{
-        \"service_key\": \"" pagerduty-key  "\",
+        \"service_key\": \"" service-key  "\",
         \"incident_key\": \"" site "\",
         \"event_type\": \"trigger\",
         \"description\": \"DOWN " site "\",
@@ -23,9 +23,9 @@
 
 (defn- up-message    
     "create a pagerduty up message"
-    [site downtime] 
+    [site downtime service-key] 
     (str "{
-        \"service_key\": \"" pagerduty-key  "\",
+        \"service_key\": \"" service-key "\",
         \"incident_key\": \"" site "\",
         \"event_type\": \"resolve\",
         \"description\": \"UP " site  " was down for " downtime "ms\",
@@ -36,11 +36,19 @@
     }"))
 
 
-(defn- send-message [msg]   
-    (def pd-endpoint "https://events.pagerduty.com/generic/2010-04-15/create_event.json") 
-    (println "calling pager duty ..")
+(defn- get-endpoint [conf]
+    (if (conf :webhook)
+        (:webhook conf)
+        "https://events.pagerduty.com/generic/2010-04-15/create_event.json"))
+
+(defn- get-service-key [conf]
+    (if (conf :service-key) (:service-key conf) pagerduty-key))
+
+(defn- send-message [msg endpoint]      
+    (println (str "calling pager duty .." endpoint))
+
     (with-open [client (http/create-client)] ; Create client
-        (let [resp (http/POST client pd-endpoint :body msg)
+        (let [resp (http/POST client endpoint :body msg)
               status (http/status resp)]                
             (http/await resp)  ;; this will make it wait              
             (println (http/string resp))
@@ -49,10 +57,12 @@
 
             
 (defn pd-down [conf fail-reason]
-    (send-message (down-message (:url conf) fail-reason)))
+    (send-message (down-message (:url conf) fail-reason (get-service-key conf)) 
+        (get-endpoint conf)))
 
 (defn pd-up [conf downtime]
-    (send-message (up-message (:url conf) downtime)))
+    (send-message (up-message (:url conf) downtime (get-service-key conf)) 
+        (get-endpoint conf))) 
 
 
 
