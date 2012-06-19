@@ -65,7 +65,7 @@
 ;;
 ;; Rest application: 
 ;;
-(defroutes main-routes  
+(defroutes main-routes    
   (GET "/" [] (resp/redirect "/index.html"))  
   (POST "/tasks" {form-params :form-params} (validate-and-create form-params))
   (DELETE "/tasks" {form-params :form-params} (remove-check-for (form-params "url")))
@@ -74,7 +74,10 @@
   (route/resources "/")
   (route/not-found "<h1>Page not found</h1>"))
 
-(def app    
-  (handler/site main-routes))
+(defn on-start [] 
+  (println (System/getProperty "endpoint_service_id" (System/getenv "endpoint_service_id"))))
+
+(def app     
+  (do (on-start)  (handler/site main-routes)))
 
 

@@ -1,7 +1,6 @@
 (ns pingtown.pagerduty
   (:use compojure.core)  
-  (:use overtone.at-at)
-  (:use pingtown.secrets)
+  (:use overtone.at-at)  
   (:require 
     [http.async.client         :as http]))
 
@@ -35,14 +34,18 @@
         }
     }"))
 
+(defn- get-env [var-name] (System/getProperty var-name (System/getenv var-name)))
+
+;; "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
 
 (defn- get-endpoint [conf]
-    (if (conf :webhook)
+    (if (:webhook conf)
         (:webhook conf)
-        "https://events.pagerduty.com/generic/2010-04-15/create_event.json"))
+        (get-env "endpoint") ))
 
 (defn- get-service-key [conf]
-    (if (conf :service-key) (:service-key conf) pagerduty-key))
+    (if (:service-key conf) (:service-key conf) 
+        (get-env "endpoint_service_key")))
 
 (defn- send-message [msg endpoint]      
     (println (str "calling pager duty .." endpoint))
