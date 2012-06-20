@@ -131,11 +131,17 @@
       (site-available conf)  
       (maybe-failure client conf (:reason result)))))
 
+(defn http-get [client conf]
+  (if (= nil (:user conf))
+      (http/GET client (:url conf) :timeout (conf :timeout))
+      (http/GET client (:url conf) :timeout (conf :timeout) 
+        :auth { :type :basic :user (:user conf) :password (:password conf)})))
+
   
 (defn perform-test
   [client conf];;url wait-time count-to-failure webhook expected-code]
   (println (str "... now checking: " (:url conf)))
-  (let [resp (http/GET client (:url conf) :timeout (conf :timeout))]
+  (let [resp (http-get client conf)]
     (after (:timeout conf)
           #(test-follow-up client resp conf) at-pool)))
 

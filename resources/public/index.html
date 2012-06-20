@@ -69,7 +69,7 @@ curl -X "DELETE" -d "url=http://localhost:8000" http://localhost:3000/tasks
           <h2>Creating a new check</h2>
            <p>create a check to periodically monitor your app for downtime, for example:</p>
           <p>
-            <pre class="prettyprint">curl -X "POST" -d "url=$URL&interval=30" http://pingtown.beescloud.com/tasks</pre>
+            <pre class="prettyprint">curl -X "POST" -d "url=$URL" http://pingtown.beescloud.com/tasks</pre>
           </p>
           <p>   
             The parameters you need to know (above uses defaults)
@@ -98,9 +98,46 @@ curl -X "DELETE" -d "url=http://localhost:8000" http://localhost:3000/tasks
                <td>How long, in seconds, to wait for your site to respond with 200 OK before deeming it not responding (default is 5)</td>
              </tr>
              <tr>
-               <td>webhook</td>
+               <td>endpoint</td>
                <td>by default, pagerduty is used for notifications/alerts, but setting this will cause a webhook to be called when failure happens or alert is cleared (as per the PD api - but to your endpoint).</td>
              </tr>
+             <tr>
+               <td>service_key</td>
+               <td>Service key used when contacting the pagerduty or endpoint api.</td>
+             </tr>
+             <tr>
+               <td>body_pattern</td>
+               <td>If set, it will check the response (assuming it gets one) to see that this substring is in it. Not a regex. Default only checks for a status code below 400</td>
+             </tr>
+             <tr>
+               <td>check_user</td>
+               <td>If set, will be used for basic auth when performing the check.</td>
+             </tr>
+             <tr>
+               <td>check_password</td>
+               <td>If set, will be used for basic auth when performing the check.</td>
+             </tr>
+             <tr>
+               <td>expected_code</td>
+               <td>Sets the exact status code expected.</td>
+             </tr>
+             <tr>
+               <td>expected_code_below</td>
+               <td>Alternatively, you can say that any http status code below this is ok. Default is that any result below 400 is success.</td>
+             </tr>
+             <tr>
+               <td>initial_delay</td>
+               <td>If set, won't start the check until this many seconds has passed.</td>
+             </tr>
+             <tr>
+               <td>expires_after</td>
+               <td>If set, test will expire after this length of time (in seconds).</td>
+             </tr>
+
+             
+
+
+
 
             </tbody>
           </table>
@@ -115,7 +152,7 @@ curl -X "DELETE" -d "url=http://localhost:8000" http://localhost:3000/tasks
             <p style="margin-bottom: 0;">
                 PingTOWN will ping your specified URL repeatedly (as per the interval setting) - each time it waits for a 200 OK response. Should it fail to return a HTTP 200 code (either by not returning a result, returning an error, or timing out), enough times in a row, then the site will be deemed to be down. 
                 <p>
-                In this case the webhook/pingdom service will be invoked, reporting that the site is down. Once the site responds successfully again, then the webhook/pingdom service will be "resolved" automatically (and it will contain an outage report tracking how long it was down for). The Pingdom API is documented
+                In this case the webhook/pagerduty service will be invoked, reporting that the site is down. Once the site responds successfully again, then the webhook/pagerduty service will be "resolved" automatically (and it will contain an outage report tracking how long it was down for). The pagerduty API is documented
                 <a href="http://www.pagerduty.com/docs/integration-api/integration-api-documentation">here</a>. If you use the default, you don't need to care about this.
             </p>
           </div>
