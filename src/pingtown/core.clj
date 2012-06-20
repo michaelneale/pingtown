@@ -36,6 +36,7 @@
             :initial-delay (maybe-millis p "initial_delay" nil)
             :expires-after (maybe-millis p "expires_after" nil)
             :service-key (p "service_key")
+            :body-pattern (p "body_pattern")
             })
         {:status 200 :body "-- Registered check OK --\n"})
 

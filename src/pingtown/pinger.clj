@@ -82,26 +82,21 @@
     (println (str "... " (:url conf) " is still OK, no action taken."))))
 
 (defn quick-check []
-  (let [resp (http/GET http-client "http://ec2-50-19-49-216.compute-1.amazonaws.com" :timeout 2000)]
-    (Thread/sleep 2001)
-    ;;(println (http/failed? resp))
-    (println "1")
-    (println (http/done? resp))
-    (println "2")
-    (println (http/status resp))
-    (println "3")))
+  (let [resp (http/GET http-client "http://www.smh.com.au")]
+    (http/await resp)
+    (str  "here: " (.contains (http/string resp) "html" ))))
 
 (defn check-response 
   "check the response against the expected. If 
   expected is not set, then it has to be < 400 to be success
   returns {:up :reason}"
   [resp conf]
-  
+
   (let [done (http/done? resp)
         expected (:expected-code conf)
         upper-status (:expected-upper conf)] 
     (cond 
-      (not done) {:up false :reason "Timeout" }
+      (not done) {:up false :reason "Timeout"}
       (http/failed? resp) {:up false :reason (str (http/error resp))}
       (= nil (:code (http/status resp))) {:up false :reason "No response"}                 
       expected (if (= expected (:code (http/status resp))) 
@@ -113,11 +108,24 @@
           {:up true :reason "Is lower than upper-status"}
       :else {:up false :reason (str "Response" resp )})))
 
+(defn check-body [resp conf]
+  (if (.contains (http/string resp) (:body-pattern conf))    
+    {:up true :reason "Body matches pattern"}
+    {:up false :reason "Body did not match pattern"}))
+  
+
+(defn check-it [resp conf]
+  (let [status-check (check-response resp conf)]
+    (println status-check)
+    (if (and (:up status-check) (not (= nil (:body-pattern conf))))
+        (check-body resp conf)
+        status-check)))
+
 
 (defn test-follow-up
   [client resp conf];;url count-to-failure webhook expected-code]
   (println "test follow up called")
-  (let [result (check-response resp conf)] 
+  (let [result (check-it resp conf)] 
     (println (str "Result was " result))
     (if (:up result)
       (site-available conf)  
