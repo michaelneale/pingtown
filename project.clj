@@ -20,7 +20,8 @@
   				       [compojure "1.0.4"]
                  [http.async.client "0.4.5"]
                  [overtone/at-at "1.0.0"]
-                 [ring-http-basic-auth "0.0.2"]]
+                 [ring-http-basic-auth "0.0.2"]
+                 [cheshire "4.0.0"]]
 
   ;; so we can do "lein ring server" (and used by deployment plugin)				
   :dev-dependencies [[lein-ring "0.7.1"]

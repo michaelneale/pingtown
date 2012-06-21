@@ -2,10 +2,10 @@
   (:use compojure.core)  
   (:use ring.middleware.resource)  
   (:use overtone.at-at)
-  (:use pingtown.pagerduty)
+  (:use pingtown.pagerduty)  
   (:require 
-      [compojure.route           :as route]
-      [compojure.handler         :as handler]
+    [compojure.route           :as route]
+    [compojure.handler         :as handler]
     [http.async.client         :as http]
     [http.async.client.request :as request]
     [ring.util.codec :as codec]))
@@ -16,7 +16,14 @@
 ;; store the tasks here, protected by an agent - maybe a defrecord or type?
 (def task-list (agent {}))
 
-(defn print-tasks [] (str (deref task-list)))
+
+
+;;(defn print-tasks [] (str (generate-string (map (fn [e] (e 0)) (deref task-list)))))
+(defn failing-check-list [] (filter (fn [e] (:outage-start (e 1))) (deref task-list)))
+(defn failing-checks [] (map (fn [e] (e 0)) (failing-check-list)))
+(defn all-checks [] (map (fn [e] (e 0)) (deref task-list)))
+
+
 
 ;;(defn print-tasks []  (map (fn [e] (e 0)) (deref task-list)))
 

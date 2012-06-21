@@ -3,6 +3,7 @@
   (:use ring.middleware.resource)    
   (:use pingtown.pinger)  
   (:use ring.middleware.http-basic-auth)
+  (:use cheshire.core)
   (:require 
 	  [compojure.route           :as route]
 	  [compojure.handler         :as handler]
@@ -71,7 +72,8 @@
 (defroutes api-routes      
   (POST "/tasks" {form-params :form-params} (validate-and-create form-params))
   (DELETE "/tasks" {form-params :form-params} (remove-check-for (form-params "url")))
-  (GET "/tasks" [] (print-tasks))
+  (GET "/failing-checks.json" [] (str (generate-string (failing-checks))))
+  (GET "/all-checks.json" [] (str (generate-string (all-checks))))
   (GET "/" [] (resp/redirect "/index.html"))  
   (GET "/quick" [] (quick-check))
   (route/resources "/")
@@ -79,11 +81,6 @@
 
 
 
-(defroutes public-routes
-  (GET "/" [] (resp/redirect "/index.html"))  
-  (GET "/quick" [] (quick-check))
-  (route/resources "/")
-  (route/not-found "<h1>Dave's not here man</h1>"))
 
 
 (defn authenticate [username password]
