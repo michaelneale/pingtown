@@ -133,6 +133,10 @@ curl -X "DELETE" -d "url=http://localhost:8000" http://localhost:3000/tasks
                <td>expires_after</td>
                <td>If set, test will expire after this length of time (in seconds).</td>
              </tr>
+             <tr>
+               <td>depends_on</td>
+               <td>A url that this check depends on - ie this check depends on another check. If this is set, then if the other check mentioned is DOWN, then it won't alert this one. This prevents blasting alerts.</td>
+             </tr>
 
              
 

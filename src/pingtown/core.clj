@@ -38,6 +38,7 @@
             :body-pattern (p "body_pattern")
             :user (p "check_user")
             :password (p "check_password")
+            :depends-on (p "depends_on")
             })
         {:status 200 :body "-- Registered check OK --\n"})
 

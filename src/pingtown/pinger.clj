@@ -38,10 +38,20 @@
 
 (def http-client (http/create-client))
 
+(defn site-is-down? [url] (contains? ((deref task-list) url) :outage-start))
+
+(defn- dependency-ok? 
+  "Check we don't have a failed depdendency, if we do, shut up."
+  [conf]
+  (if (= nil (:depends-on conf))
+    true
+    (not (site-is-down? (:depends-on conf)))))
 
 (defn notify-down [conf fail-reason]    
   (println (str "DOWN " (:url conf)))
-  (pd-down conf fail-reason))
+  (if (dependency-ok? conf) 
+    (pd-down conf fail-reason)
+    true))
 
 (defn notify-up [conf]
   (let [url (:url conf)
@@ -50,7 +60,7 @@
       (println (str "UP " url " was down for " downtime "ms"))
       (pd-up conf downtime)))
 
-(defn site-is-down? [url] (contains? ((deref task-list) url) :outage-start))
+
 
 (defn site-down 
   "Maybe send a notification that the site is down."
