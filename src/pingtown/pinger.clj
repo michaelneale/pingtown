@@ -7,7 +7,8 @@
       [compojure.route           :as route]
       [compojure.handler         :as handler]
     [http.async.client         :as http]
-    [http.async.client.request :as request]))
+    [http.async.client.request :as request]
+    [ring.util.codec :as codec]))
 
 ;; pool for at-at timer tasks
 (def at-pool (mk-pool))
@@ -82,9 +83,7 @@
     (println (str "... " (:url conf) " is still OK, no action taken."))))
 
 (defn quick-check []
-  (let [resp (http/GET http-client "http://www.smh.com.au")]
-    (http/await resp)
-    (str  "here: " (.contains (http/string resp) "html" ))))
+  (codec/base64-encode (.getBytes "yeah man !")))
 
 (defn check-response 
   "check the response against the expected. If 
@@ -135,7 +134,7 @@
   (if (= nil (:user conf))
       (http/GET client (:url conf) :timeout (conf :timeout))
       (http/GET client (:url conf) :timeout (conf :timeout) 
-        :auth { :type :basic :user (:user conf) :password (:password conf)})))
+        :auth { :type :basic :user (:user conf) :password (:password conf) :preemptive true})))
 
   
 (defn perform-test
