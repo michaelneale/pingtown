@@ -19,16 +19,15 @@
   :dependencies [[org.clojure/clojure "1.3.0"]
   				       [compojure "1.0.4"]
                  [http.async.client "0.4.5"]
-                 [overtone/at-at "1.0.0"]]
+                 [overtone/at-at "1.0.0"]
+                 [ring-http-basic-auth "0.0.2"]]
 
   ;; so we can do "lein ring server" (and used by deployment plugin)				
   :dev-dependencies [[lein-ring "0.7.1"]
                      [lein-cloudbees "1.0.2-SNAPSHOT"]]
 
   ;; the main entry point for our app
-  :ring {      
-      :handler pingtown.core/app
-      }
+  :ring { :handler pingtown.core/app }
 
   :init (fn [] (println "INIT"))
   :destroy (fn [] (println "DESTROY"))

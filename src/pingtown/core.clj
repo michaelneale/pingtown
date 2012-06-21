@@ -1,9 +1,8 @@
 (ns pingtown.core
   (:use compojure.core)  
-  (:use ring.middleware.resource)  
-  (:use overtone.at-at)
-  (:use pingtown.pinger)
-  (:use pingtown.pagerduty)
+  (:use ring.middleware.resource)    
+  (:use pingtown.pinger)  
+  (:use ring.middleware.http-basic-auth)
   (:require 
 	  [compojure.route           :as route]
 	  [compojure.handler         :as handler]
@@ -68,17 +67,45 @@
 ;;
 ;; Rest application: 
 ;;
-(defroutes main-routes    
-  (GET "/" [] (resp/redirect "/index.html"))  
+(defroutes api-routes      
   (POST "/tasks" {form-params :form-params} (validate-and-create form-params))
   (DELETE "/tasks" {form-params :form-params} (remove-check-for (form-params "url")))
-  (GET "/tasks" [] (print-tasks))  
+  (GET "/tasks" [] (print-tasks))
+  (GET "/" [] (resp/redirect "/index.html"))  
   (GET "/quick" [] (quick-check))
   (route/resources "/")
-  (route/not-found "<h1>Page not found</h1>"))
+  (route/not-found "<h1>Dave's not here man</h1>"))
 
-(defn on-start [] 
+
+
+(defroutes public-routes
+  (GET "/" [] (resp/redirect "/index.html"))  
+  (GET "/quick" [] (quick-check))
+  (route/resources "/")
+  (route/not-found "<h1>Dave's not here man</h1>"))
+
+
+(defn authenticate [username password]
+  (if (and (= username "username")
+           (= password "password"))
+    {:username username}))
+
+(defn fake [u p] {:username "test"})
+
+
+(defroutes main-routes      
+  (wrap-require-auth api-routes fake
+    "The Secret Area" {:body "You're not allowed in The Secret Area!"}))
+
+
+(defn on-start
+  "sample on start hook"
+  [] 
   (println (System/getProperty "endpoint_service_id" (System/getenv "endpoint_service_id"))))
+
+
+;;following
+;;https://github.com/adeel/ring-http-basic-auth
 
 (def app     
   (do (on-start)  (handler/site main-routes)))
