@@ -4,7 +4,7 @@ Crazy idea of a distributable ping checkier:
 
 POST /check?target=..&interval=1&failure_after=3&webhook=...
 ... or something like that. 
-will coolback when target fails to return 20X responses.
+will fire off the callback when target fails to return 20X responses.
 
 Also learning clojure.
 
