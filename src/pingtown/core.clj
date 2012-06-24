@@ -25,7 +25,9 @@
     (nbr (params field))
     otherwise))
 
-(defn hash-fn [input]
+(defn hash-fn 
+  "SHA hash, shouldn't be this hard, but it is an annoying library."  
+  [input]
   (let [md (MessageDigest/getInstance "SHA-256")]
     (. md update (.getBytes input))
     (let [digest (.digest md)]
@@ -91,9 +93,9 @@
 (def user (System/getProperty "pingtown_api_key" (System/getenv "pingtown_api_key")))
 (def password (System/getProperty "pingtown_api_secret" (System/getenv "pingtown_api_secret")))
 
-(defn same? [s1 s2] 
-  ;;(let [rnd (* (rand-int 200) (rand-int 2000))]
-  ;;    (= (str s2 rnd) (str s1 rnd))))
+(defn same? 
+  "use SHA-256 to compare to avoid fictional timing attacks"
+  [s1 s2] 
   (= (hash-fn (str "XX" s1)) (hash-fn (str "XX" s2))))
 
 (defn authenticate [api-key api-secret]
