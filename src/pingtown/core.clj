@@ -81,26 +81,27 @@
   (route/resources "/")
   (route/not-found "<h1>Dave's not here man</h1>"))
 
+(def user (System/getProperty "pingtown_api_key" (System/getenv "pingtown_api_key")))
+(def password (System/getProperty "pingtown_api_secret" (System/getenv "pingtown_api_secret")))
 
+(defn same? [s1 s2] 
+  (let [rnd (* (rand-int 200) (rand-int 2000))]
+      (= (str s2 rnd) (str s1 rnd))))
 
-
-
-(defn authenticate [username password]
-  (if (and (= username "username")
-           (= password "password"))
-    {:username username}))
-
-(defn fake [u p] {:username "test"})
-
+(defn authenticate [api-key api-secret]
+  (cond 
+    (= nil user) {:username "anon"}
+    (and (same? api-key user)
+           (same? api-secret password))
+          {:username api-key}
+    :else nil ))
 
 (defroutes main-routes      
-  (wrap-require-auth api-routes fake
+  (wrap-require-auth api-routes authenticate
     "The Secret Area" {:body "You're not allowed in The Secret Area!"}))
 
 
-(defn on-start
-  "sample on start hook"
-  [] 
+(defn on-start [] 
   (start-db-sync))
 
 
