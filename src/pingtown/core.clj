@@ -4,6 +4,7 @@
   (:use pingtown.pinger)  
   (:use ring.middleware.http-basic-auth)
   (:use cheshire.core)
+  (:use pingtown.persist)
   (:require 
 	  [compojure.route           :as route]
 	  [compojure.handler         :as handler]
