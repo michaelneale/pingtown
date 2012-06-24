@@ -5,6 +5,7 @@
   (:use ring.middleware.http-basic-auth)
   (:use cheshire.core)
   (:use pingtown.persist)
+  (import [java.security MessageDigest])  
   (:require 
 	  [compojure.route           :as route]
 	  [compojure.handler         :as handler]
@@ -23,6 +24,12 @@
   (if (contains? params field)
     (nbr (params field))
     otherwise))
+
+(defn hash-fn [input]
+  (let [md (MessageDigest/getInstance "SHA-256")]
+    (. md update (.getBytes input))
+    (let [digest (.digest md)]
+      (apply str (map #(format "%02x" (bit-and % 0xff)) digest)))))
 
 
 (defn create-check [p]
@@ -85,8 +92,9 @@
 (def password (System/getProperty "pingtown_api_secret" (System/getenv "pingtown_api_secret")))
 
 (defn same? [s1 s2] 
-  (let [rnd (* (rand-int 200) (rand-int 2000))]
-      (= (str s2 rnd) (str s1 rnd))))
+  ;;(let [rnd (* (rand-int 200) (rand-int 2000))]
+  ;;    (= (str s2 rnd) (str s1 rnd))))
+  (= (hash-fn (str "XX" s1)) (hash-fn (str "XX" s2))))
 
 (defn authenticate [api-key api-secret]
   (cond 
