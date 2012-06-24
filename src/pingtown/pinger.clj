@@ -3,6 +3,7 @@
   (:use ring.middleware.resource)  
   (:use overtone.at-at)
   (:use pingtown.pagerduty)  
+  (:use pingtown.persist)  
   (:require 
     [compojure.route           :as route]
     [compojure.handler         :as handler]
@@ -161,12 +162,10 @@
     (after (:timeout conf)
           #(test-follow-up client resp conf) at-pool)))
 
-(defn store-config [config] (println "IMPLEMENT ME !"))
-(defn remove-from-storage [url] (println (str "IMPLEMENT ME REMOVE!" url)))
 
 
 (defn remove-check-for [url]
-    (remove-from-storage url)    
+    (delete-check url)    
     (let [task-entry ((deref task-list) url)]
         (println (str "STOPPING " task-entry " for " url))
         (stop (:task task-entry))
@@ -178,12 +177,8 @@
       (after (:expires-after conf) 
           #(remove-check-for (:url conf)) at-pool)))
 
-(defn register-check    
-    "create a new check"
-    [conf]
-    (store-config conf)
-    (println (str "Registering " conf))
-    (let [task (every (conf :interval) 
+(defn start-check [conf]
+      (let [task (every (conf :interval) 
                       #(perform-test http-client conf) 
                         at-pool
                         :initial-delay 
@@ -191,6 +186,19 @@
                           (:initial-delay conf) 0))]
       (maybe-expire conf)
       (defn append-task [ls new-task] (merge ls new-task))
-      (send task-list append-task {(conf :url) {:task task :failures 0}})))
+      (send task-list append-task {(conf :url) {:task task :failures 0}}))
+      true)
+
+
+(defn register-check    
+    "create a new check and store it"
+    [conf]
+    (println (str "Registering " conf))
+    (if (store-check conf) 
+        (start-check conf)
+        false)) 
+
+
+    
 
 

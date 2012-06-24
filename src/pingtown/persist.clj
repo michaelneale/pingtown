@@ -24,7 +24,16 @@
         (println (http/string resp))
         (:ok (parse-string (http/string resp) true))))
 
+(defn load-check [url]
+    (let [resp (http/GET client (str db-url (c/url-encode url))
+                :auth {:user db-key :password db-secret})]
+                (http/await resp)
+            (parse-string (http/string resp) true)))        
+
+
+
 (defn delete-check [url]
+    (println (str "Deleting " url))
     (let [current-check (load-check url)
           resp (http/DELETE client 
                    (str db-url (c/url-encode url) "?rev=" (:_rev current-check))
@@ -34,11 +43,6 @@
             (println (http/string resp))
             (:ok (parse-string (http/string resp) true))))
 
-(defn load-check [url]
-    (let [resp (http/GET client (str db-url (c/url-encode url))
-                :auth {:user db-key :password db-secret})]
-                (http/await resp)
-            (parse-string (http/string resp) true)))        
 
 
 

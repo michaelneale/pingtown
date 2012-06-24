@@ -26,7 +26,7 @@
 
 
 (defn create-check [p]
-      (register-check {
+      (if (register-check {
             :interval (maybe-millis p "interval" 60000) 
             :timeout (maybe-millis p "timeout" 8000)                           
             :failures (maybe-nbr p "failures" 2)
@@ -41,8 +41,9 @@
             :user (p "check_user")
             :password (p "check_password")
             :depends-on (p "depends_on")
-            })
-        {:status 200 :body "-- Registered check OK --\n"})
+            })      
+        {:status 200 :body "Registered check OK\n"}
+        {:status 500 :body "ERROR: Unable to create check\n"}))
 
 
 
