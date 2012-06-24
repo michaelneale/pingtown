@@ -198,6 +198,24 @@
         (start-check conf)
         false)) 
 
+(defn load-all []
+  (println "... starting DB sync ...")
+  (defn make-check [id] 
+    (let [config (load-check id)]
+      (if (:url config)
+        (start-check (load-check id))
+        (println (str "Unable to load DB record " config)))))
+    
+  (doall  (map make-check (list-checks)))
+  (println "... finished DB sync ..."))  
+
+(defn start-db-sync 
+  "Load from database periodically"
+  []
+  (every 600000 load-all (mk-pool) :initial-delay 2000))
+
+  
+
 
     
 

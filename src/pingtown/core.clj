@@ -101,7 +101,7 @@
 (defn on-start
   "sample on start hook"
   [] 
-  (println (System/getProperty "endpoint_service_id" (System/getenv "endpoint_service_id"))))
+  (start-db-sync))
 
 
 ;;following
