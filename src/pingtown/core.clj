@@ -85,7 +85,7 @@
   (DELETE "/tasks" {form-params :form-params} (remove-check-for (form-params "url")))
   (GET "/failing-checks.json" [] (str (generate-string (failing-checks))))
   (GET "/all-checks.json" [] (str (generate-string (all-checks))))
-  (GET "/" [] (resp/redirect "/index.html"))  
+  (GET "/" [] (do (maybe-start-db-sync) (resp/redirect "/index.html")))  
   (GET "/quick" [] (quick-check))
   (route/resources "/")
   (route/not-found "<h1>Dave's not here man</h1>"))
@@ -111,14 +111,11 @@
     "The Secret Area" {:body "You're not allowed in The Secret Area!"}))
 
 
-(defn on-start [] 
-  (start-db-sync))
 
 
 ;;following
 ;;https://github.com/adeel/ring-http-basic-auth
 
-(def app     
-  (do (on-start)  (handler/site main-routes)))
+(def app (handler/site main-routes))
 
 

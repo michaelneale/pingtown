@@ -208,10 +208,14 @@
   (doall (map make-check (list-checks)))
   (println "... finished DB sync ..."))  
 
-(defn start-db-sync 
+(def sync-pool (mk-pool))
+
+(defn maybe-start-db-sync 
   "Load from database periodically"
   []
-  (every 600000 load-all (mk-pool) :initial-delay 2000))
+  (if (empty? (scheduled-jobs sync-pool))
+    (do (println "starting db sync background process")
+      (every 600000 load-all (mk-pool) :initial-delay 0))))
 
   
 
