@@ -172,12 +172,12 @@
         (send task-list (fn [all-tasks] (dissoc all-tasks url)))))
 
 
-(defn maybe-expire [conf]
+(defn- maybe-expire [conf]
     (if (:expires-after conf)
       (after (:expires-after conf) 
           #(remove-check-for (:url conf)) at-pool)))
 
-(defn start-check [conf]
+(defn- start-check [conf]
       (let [task (every (conf :interval) 
                       #(perform-test http-client conf) 
                         at-pool
@@ -198,15 +198,23 @@
         (start-check conf)
         false)) 
 
-(defn load-all []
+(defn- start-stored-check 
+  "Load and launch a check for this url"
+  [url]
+  (let [config (load-check url)]
+    (if (:url config)
+      (start-check config)
+      (println (str "Unable to load DB record " config)))))    
+
+
+(defn load-all 
+  "Load the list of stored checks, ignoring the ones already running"
+  []
   (println "... starting DB sync ...")
-  (defn make-check [id] 
-    (let [config (load-check id)]
-      (if (:url config)
-        (start-check config)
-        (println (str "Unable to load DB record " config)))))    
-  (doall (map make-check (list-checks)))
-  (println "... finished DB sync ..."))  
+  (let [stored-checks (filter #(not (check-existing? %)) (list-checks))]
+    (doall (map start-stored-check stored-checks))
+    (println "... finished DB sync ...")))
+  
 
 (def sync-pool (mk-pool))
 
@@ -215,7 +223,7 @@
   []
   (if (empty? (scheduled-jobs sync-pool))
     (do (println "starting db sync background process")
-      (every 600000 load-all (mk-pool) :initial-delay 0))))
+      (every 600000 load-all sync-pool :initial-delay 0))))
 
   
 
