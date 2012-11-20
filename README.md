@@ -1,5 +1,8 @@
 # PINGTOWN
 
+Buildhive status:
+[![Build Status](https://buildhive.cloudbees.com/job/michaelneale/job/pingtown/badge/icon)](https://buildhive.cloudbees.com/job/michaelneale/job/pingtown/)
+
 Cover your user visble urls with ping checks checks. See resource/public/index.html for documentation on how to use it. 
 Rough features: configurable timeouts, response code ranges, pattern matching, check expiry, delayed start, failure counting, check authenticated sites, check dependencies, and more.
 

@@ -1,6 +1,6 @@
-(ns sample-clojure-cloudbees.test.core
-  (:use [sample-clojure-cloudbees.core])
-  (:use [clojure.test]))
+(ns sample-clojure-cloudbees.test.core  
+  (:use [clojure.test]
+        [pingtown.core]))
 
 (deftest replace-me 
-  (is false "You might want to write some tests for your application, I would. Maybe."))
+  (is (not (= nil (hash-fn "yeah"))) "You might want to write some tests for your application, I would. Maybe."))
