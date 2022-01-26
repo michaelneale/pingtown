@@ -1,5 +1,7 @@
 # PINGTOWN
 
+[![Git](https://app.soluble.cloud/api/v1/public/badges/aec572fa-584f-452b-889a-cb90a0f495b8.svg?orgId=451115019187)](https://app.soluble.cloud/repos/details/github.com/michaelneale/pingtown?orgId=451115019187)  
+
 Buildhive status:
 [![Build Status](https://buildhive.cloudbees.com/job/michaelneale/job/pingtown/badge/icon)](https://buildhive.cloudbees.com/job/michaelneale/job/pingtown/)
 
